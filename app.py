@@ -1,5 +1,5 @@
-from flask import Flask, request, jsonify, send_file
-from flask_cors import CORS
+from flask import Flask, request, jsonify
+from flask_cors import CORS, cross_origin
 from datetime import datetime, timedelta
 import os
 import random
@@ -45,7 +45,14 @@ except ImportError:
             print("❌ No PDF library available - using HTML fallback")
 
 app = Flask(__name__)
-CORS(app)
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
+CORS(app, origins=[
+    "https://kundali99.com",
+    "https://www.kundali99.com",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+])
+
 
 # Real Lord Ganesha image URL
 GANESHA_IMAGE_URL = "https://i.ibb.co/tgvs8sc/ganesha.jpg"
@@ -53,6 +60,7 @@ GANESHA_IMAGE_URL = "https://i.ibb.co/tgvs8sc/ganesha.jpg"
 # Cashfree Configuration
 CASHFREE_APP_ID = os.environ.get('CASHFREE_APP_ID')
 CASHFREE_SECRET_KEY = os.environ.get('CASHFREE_SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key')
 CASHFREE_ENVIRONMENT = os.environ.get('CASHFREE_ENVIRONMENT', 'PRODUCTION')  # or 'SANDBOX'
 X_API_VERSION = '2023-08-01'
 
@@ -701,14 +709,9 @@ def generate_pdf(html_content, output_path):
         print(f"❌ PDF generation error: {e}")
         return False
 
-@app.route('/')
-def home():
-    return jsonify({
-        'status': 'success',
-        'message': 'Lord Ganesha Astrology API is running',
-        'version': '2.0.0',
-        'features': ['predictions', 'pdf_report', 'multilingual', 'payment']
-    })
+@app.route('/api/health')
+def health():
+    return jsonify({"status": "healthy", "message": "API is running"})
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -719,8 +722,11 @@ def health_check():
         'pdf_engine': PDF_ENGINE
     })
 
-@app.route('/api/generate-predictions', methods=['POST'])
+@app.route('/api/generate-predictions', methods=['POST', 'OPTIONS'])
+@cross_origin()
 def generate_predictions():
+    if request.method == 'OPTIONS':
+        return '', 200
     try:
         data = request.get_json()
         print(f"📥 Received prediction request: {data}")
@@ -949,8 +955,11 @@ def create_pdf_html(data):
 
     return html
 
-@app.route('/api/create-payment-order', methods=['POST'])
+@app.route('/api/create-payment-order', methods=['POST', 'OPTIONS'])
+@cross_origin()
 def create_payment_order():
+     if request.method == 'OPTIONS':
+        return '', 200
     """Create Cashfree payment order"""
     try:
         if not CASHFREE_AVAILABLE:
@@ -1068,8 +1077,11 @@ def verify_webhook_signature(self, data, signature):
         print(f"Signature verification error: {e}")
         return False
 
-@app.route('/api/get-payment-status/<order_id>', methods=['GET'])
+@app.route('/api/get-payment-status/<order_id>', methods=['POST', 'OPTIONS'])
+@cross_origin()
 def get_payment_status(order_id):
+     if request.method == 'OPTIONS':
+        return '', 200
     """Get payment status for an order"""
     try:
         if not CASHFREE_AVAILABLE:
@@ -1110,4 +1122,4 @@ if __name__ == '__main__':
     print(f"💰 Cashfree available: {CASHFREE_AVAILABLE}")
     print(f"📄 PDF engine: {PDF_ENGINE}")
     
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    app.run(host='0.0.0.0', port=port, debug=False)
