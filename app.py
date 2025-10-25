@@ -709,10 +709,6 @@ def generate_pdf(html_content, output_path):
         print(f"❌ PDF generation error: {e}")
         return False
 
-@app.route('/api/health')
-def health():
-    return jsonify({"status": "healthy", "message": "API is running"})
-
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({
@@ -958,7 +954,7 @@ def create_pdf_html(data):
 @app.route('/api/create-payment-order', methods=['POST', 'OPTIONS'])
 @cross_origin()
 def create_payment_order():
-     if request.method == 'OPTIONS':
+    if request.method == 'OPTIONS':
         return '', 200
     """Create Cashfree payment order"""
     try:
@@ -1033,9 +1029,9 @@ def payment_webhook():
         data = request.get_json()
         print(f"🔄 Received payment webhook: {data}")
 
-        # Verify signature
+        # Verify signature (FIXED: removed self)
         signature = request.headers.get('x-webhook-signature')
-        if not self.verify_webhook_signature(data, signature):
+        if not verify_webhook_signature(data, signature):
             print("❌ Invalid webhook signature")
             return jsonify({'status': 'error', 'message': 'Invalid signature'}), 401
 
@@ -1058,7 +1054,7 @@ def payment_webhook():
         print(f"❌ Webhook processing error: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-def verify_webhook_signature(self, data, signature):
+def verify_webhook_signature(data, signature):
     """Verify Cashfree webhook signature"""
     try:
         # Sort the data and create signature string
@@ -1080,7 +1076,7 @@ def verify_webhook_signature(self, data, signature):
 @app.route('/api/get-payment-status/<order_id>', methods=['POST', 'OPTIONS'])
 @cross_origin()
 def get_payment_status(order_id):
-     if request.method == 'OPTIONS':
+    if request.method == 'OPTIONS':
         return '', 200
     """Get payment status for an order"""
     try:
