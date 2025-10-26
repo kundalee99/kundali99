@@ -1,7 +1,0 @@
-Flask==2.3.3
-flask-cors==4.0.0
-requests==2.31.0
-cashfree-pg-sdk==4.3.10
-weasyprint==61.0
-xhtml2pdf==0.2.13
-pdfkit==1.0.0
